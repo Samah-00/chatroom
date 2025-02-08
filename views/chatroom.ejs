@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatroom</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
+<body>
+
+<header>
+    <% if (userData) { %>
+        <span>Welcome, <%= userData.firstName %> <%= userData.lastName %></span>
+    <% } else { %>
+        <span>Error: No user data available</span>
+    <% } %>
+    <button id="logoutButton">Logout</button>
+</header>
+
+<div class="container">
+    <h1>Chatroom</h1>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Search messages..." />
+        <button id="searchButton" onclick="searchMessages()">Search</button>
+        <button class="done-button" id="doneButton" onclick="resetSearch()" style="display: none;">Done</button>
+    </div>    
+    
+    <div id="chatMessages" class="chat-messages">
+        <% messages.forEach((msg) => { %>
+            <div class="message <%= msg.email === userData.email ? 'sent' : 'received' %>">
+                <div class="message-content">
+                    <strong><%= msg.user %></strong>
+                    <p><%= msg.text %></p>
+                    <span class="timestamp">
+                        <%= new Date(msg.timestamp).toLocaleString() %>
+                        <% if (new Date(msg.timestamp).getTime() !== new Date(msg.lastUpdated).getTime()) { %>
+                            <span class="edited">(edited)</span>
+                        <% } %>
+                    </span>
+                </div>
+                <% if (msg.email === userData.email) { %>
+                    <div class="message-actions">
+                        <button onclick="editMessage(<%= msg.id %>)">✏️</button>
+                        <button onclick="deleteMessage(<%= msg.id %>)">🗑️</button>
+                    </div>
+                <% } %>
+            </div>
+        <% }) %>
+    </div>
+    
+    <form id="messageForm" class="message-input-container">
+        <label for="message"></label><input type="text" id="message" placeholder="Type your message here..." required>
+        <button type="submit">Send</button>
+    </form>
+</div>
+
+<script>
+    const POLLING = 10000; // every 10 seconds
+    let isSearching = false;
+    let searchResults = [];
+
+    // Initial fetch and set interval
+    updateChatMessages();
+    setInterval(updateChatMessages, POLLING);
+
+     // Fetch new messages and update the chat
+     function updateChatMessages() {
+        if (!isSearching) {
+            fetch("/chatroom/messages")
+            .then(response => response.json())
+            .then(messages => {
+                displayMessages(messages);
+            })
+            .catch(error => console.error("Error fetching messages:", error));
+        } else {
+            displayMessages(searchResults);
+        }
+    }
+
+    // Send a message
+    document.getElementById("messageForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const message = document.getElementById("message").value.trim();
+        if (!message) {
+            alert("Message cannot be empty");
+            return;
+        }
+
+        fetch("/chatroom/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+        })
+            .then(() => {
+                document.getElementById("message").value = ''; // Clear the input field
+                updateChatMessages(); // Refresh the chat
+            });
+    });
+
+    // Delete a message
+    function deleteMessage(id) {
+        fetch(`/chatroom/delete/${id}`, {
+            method: 'DELETE',
+        })
+            .then(response => response.text())
+            .then(message => {
+                alert(message);
+                updateChatMessages(); // Refresh the chat
+            });
+    }
+
+    // Edit a message
+    function editMessage(id) {
+        const messageElement = document.querySelector(`button[onclick="editMessage(${id})"]`).closest('.message').querySelector('p');
+        const originalText = messageElement.innerText;
+
+        const newText = prompt("Edit your message:", originalText);
+        if (newText !== null && newText.trim() !== "" && newText !== originalText) {
+            fetch(`/chatroom/edit/${id}`, {
+                method: 'PUT',
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ newText })
+            })
+                .then(response => response.json())
+                .then(updatedMessage => {
+                    alert("Message updated");
+                    updateChatMessages(); // Refresh the chat
+                });
+        }
+    }
+
+    function searchMessages() {
+        const searchTerm = document.getElementById("searchInput").value.trim().toLowerCase();
+        if (searchTerm === "") {
+            return;
+        }
+
+        isSearching = true;
+
+        document.getElementById("doneButton").style.display = 'inline-block';
+        document.getElementById("searchButton").style.display = 'none';
+
+        fetch(`/chatroom/search?term=${searchTerm}`) 
+            .then(response => response.json())
+            .then(messages => {
+                searchResults = messages;
+                displayMessages(searchResults);
+            })
+            .catch(error => console.error("Error fetching messages:", error));
+    }
+
+    // Function to reset the search state
+    function resetSearch() {
+        isSearching = false;
+        document.getElementById("doneButton").style.display = 'none';
+        document.getElementById("searchButton").style.display = 'inline-block';
+        document.getElementById("searchInput").value = '';
+        updateChatMessages();
+    }
+
+    // Function to display messages
+    function displayMessages(messages) {
+        const chatMessages = document.getElementById("chatMessages");
+        chatMessages.innerHTML = "";
+
+        messages.forEach(msg => {
+            const isEdited = new Date(msg.timestamp).getTime() !== new Date(msg.lastUpdated).getTime();
+            chatMessages.innerHTML += `
+                <div class="message ${msg.email === '<%= userData.email %>' ? 'sent' : 'received'}">
+                    <div class="message-content">
+                        <strong>${msg.user}</strong>
+                        <p>${msg.text}</p>
+                        <span class="timestamp">
+                            ${new Date(msg.timestamp).toLocaleString()}
+                            ${isEdited ? '<span class="edited">(edited)</span>' : ''}
+                        </span>
+                    </div>
+                    ${msg.email === '<%= userData.email %>' ? `
+                        <div class="message-actions">
+                            <button onclick="editMessage(${msg.id})">✏️</button>
+                            <button onclick="deleteMessage(${msg.id})">🗑️</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+
+        // Scroll to the bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Logout
+    document.getElementById("logoutButton").addEventListener("click", function () {
+        fetch("/logout", { method: "GET" })
+            .then(() => {
+                window.location.href = "/"; // Redirect to login page after logout
+            })
+            .catch(error => console.error("Error logging out:", error));
+    });
+</script>
+
+</body>
+</html>

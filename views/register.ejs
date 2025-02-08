@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
+<body>
+<header>Chatroom</header>
+<div class="container">
+    <h1>Register</h1>
+    <form action="/register" method="POST">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" value="<%= userData.email || '' %>" required>
+        <% if (message && message.email) { %>
+            <p class="error"><%= message.email %></p>
+        <% } %>
+
+        <label for="firstName">First Name:</label>
+        <input type="text" id="firstName" name="firstName" value="<%= userData.firstName || '' %>" 
+            required
+            minlength="3" maxlength="32" pattern="[a-zA-Z]+"
+        >
+        <% if (message && message.firstName) { %>
+            <p class="error"><%= message.firstName %></p>
+        <% } %>
+
+        <label for="lastName">Last Name:</label>
+        <input type="text" id="lastName" name="lastName" value="<%= userData.lastName || '' %>" 
+            required
+            minlength="3" maxlength="32" pattern="[a-zA-Z]+"
+        >
+        <% if (message && message.lastName) { %>
+            <p class="error"><%= message.lastName %></p>
+        <% } %>
+
+        <button type="submit">Next</button>
+    </form>
+    <p><a href="/">Back</a></p>
+</div>
+
+<footer class="text-center mt-5">
+    <p>&copy; 2025 Samah Rajabi</p>
+</footer>
+
+</body>
+</html>
