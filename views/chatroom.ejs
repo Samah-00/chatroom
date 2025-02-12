@@ -33,8 +33,8 @@
                     <strong><%= msg.user %></strong>
                     <p><%= msg.text %></p>
                     <span class="timestamp">
-                        <%= new Date(msg.timestamp).toLocaleString() %>
-                        <% if (new Date(msg.timestamp).getTime() !== new Date(msg.lastUpdated).getTime()) { %>
+                        <%= new Date(msg.createdAt).toLocaleString() %>
+                        <% if (new Date(msg.createdAt).getTime() !== new Date(msg.updatedAt).getTime()) { %>
                             <span class="edited">(edited)</span>
                         <% } %>
                     </span>
@@ -165,14 +165,14 @@
         chatMessages.innerHTML = "";
 
         messages.forEach(msg => {
-            const isEdited = new Date(msg.timestamp).getTime() !== new Date(msg.lastUpdated).getTime();
+            const isEdited = new Date(msg.createdAt).getTime() !== new Date(msg.updatedAt).getTime();
             chatMessages.innerHTML += `
                 <div class="message ${msg.email === '<%= userData.email %>' ? 'sent' : 'received'}">
                     <div class="message-content">
                         <strong>${msg.user}</strong>
                         <p>${msg.text}</p>
                         <span class="timestamp">
-                            ${new Date(msg.timestamp).toLocaleString()}
+                            ${new Date(msg.createdAt).toLocaleString()}
                             ${isEdited ? '<span class="edited">(edited)</span>' : ''}
                         </span>
                     </div>

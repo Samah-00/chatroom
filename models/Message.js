@@ -21,22 +21,12 @@ module.exports = (sequelize) => {
                 type: DataTypes.STRING,
                 allowNull: false,
             },
-            timestamp: {
-                type: DataTypes.DATE,
-                defaultValue: Sequelize.NOW,
-                allowNull: false,
-            },
-            lastUpdated: {
-                type: DataTypes.DATE,
-                defaultValue: Sequelize.NOW,
-                allowNull: false,
-            },
         },
         {
             sequelize,
             modelName: "Message",
             timestamps: true,
-            updatedAt: "lastUpdated",
+            paranoid: true,
         }
     );
     return Message;

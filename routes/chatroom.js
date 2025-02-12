@@ -14,7 +14,7 @@ function checkSession(req, res, next) {
   // Chatroom page
   router.get("/", checkSession, async (req, res) => {
     try {
-        const messages = await Message.findAll({ order: [['timestamp', 'ASC']] }) || [];
+        const messages = await Message.findAll({ order: [['createdAt', 'ASC']] }) || [];
         res.render("chatroom", { userData: req.session.user, messages });
     } catch (error) {
         console.error("Error fetching messages:", error);
@@ -25,7 +25,7 @@ function checkSession(req, res, next) {
   // Get all messages
   router.get("/messages", checkSession, async (req, res) => {
     try {
-        const messages = await Message.findAll({ order: [['timestamp', 'ASC']] }) || [];
+        const messages = await Message.findAll({ order: [['createdAt', 'ASC']] }) || [];
         res.status(200).json(messages.length ? messages : []);
     } catch (error) {
         console.error("Error fetching messages:", error);
@@ -68,7 +68,7 @@ function checkSession(req, res, next) {
             return res.status(404).send("Message not found or you're not the author");
         }
   
-        await message.destroy(); // Delete the message
+        await message.destroy(); // (Soft) delete the message
         res.status(200).send("Message deleted");
     } catch (error) {
         console.error("Error deleting message:", error);
@@ -109,7 +109,7 @@ function checkSession(req, res, next) {
                     [Op.like]: `%${term}%`, // Search for messages containing the term
                 }
             },
-            order: [['timestamp', 'ASC']]
+            order: [['createdAt', 'ASC']]
         });
   
         res.json(messages);
